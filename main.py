@@ -1,35 +1,35 @@
-"""Golden Hour Ramen — make.fun entry.
+"""Golden Pancake Stack — entrypoint.
 
-Renders one 1024x1024 picture of a bowl of ramen whose star ingredient
-is the halved ajitama egg, using only the Python standard library, and
-writes it to /output/entry.png (or $MAKEFUN_OUTPUT_DIR/entry.png when
-that variable is set, or the path given as the first argument).
-
-    python3 main.py [output-path]
+Renders the pancake scene with the pure-stdlib rasterizer in cakes.py
+and writes one PNG to $MAKEFUN_OUTPUT_DIR/entry.png (default
+/output/entry.png).  No network, no third-party packages, runs in a few
+seconds.
 """
 
 import os
 import sys
+import time
 
-from pngwrite import write_png
-from ramen import W, H, draw
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-
-def default_output_path():
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    return os.path.join(out_dir, "entry.png")
+from cakes import render  # noqa: E402
+from png import encode_png  # noqa: E402
 
 
-def main(argv):
-    path = argv[1] if len(argv) > 1 else default_output_path()
-    directory = os.path.dirname(path)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-    canvas = draw()
-    size = write_png(path, canvas.px, W, H)
-    print("wrote %s (%d bytes, %dx%d)" % (path, size, W, H))
-    return 0
+def main():
+    started = time.time()
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "entry.png")
+
+    canvas = render()
+    data = encode_png(canvas.w, canvas.h, canvas.to_pixels())
+    with open(out_path, "wb") as fh:
+        fh.write(data)
+
+    print(f"wrote {out_path} ({len(data)} bytes, "
+          f"{canvas.w}x{canvas.h}) in {time.time() - started:.1f}s")
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main()
